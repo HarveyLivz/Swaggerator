@@ -1,0 +1,19 @@
+﻿services:
+  - name: User Service
+    description: Manages user authentication and profiles
+    url: https://userservice.example.com/swagger
+    healthCheckUrl: https://userservice.example.com/health
+    authRequired: true
+    authType: JWT
+    tags:
+      - authentication
+      - users
+
+  - name: Product Service
+    description: Handles product catalog and inventory
+    url: https://productservice.example.com/swagger
+    healthCheckUrl: https://productservice.example.com/health
+    authRequired: false
+    tags:
+      - products
+      - inventory

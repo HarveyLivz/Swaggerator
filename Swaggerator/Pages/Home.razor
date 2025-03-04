@@ -1,0 +1,294 @@
+﻿@page "/"
+@using Swaggerator.Services
+@using Swaggerator.Shared
+@inject HttpClient HttpClient
+@inject IYamlService YamlService
+
+<PageTitle>Swaggerator</PageTitle>
+<div>
+    @if (_catalog?.Services.Count > 0)
+    {
+        <div class="row mb-4">
+            <div class="col">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2>
+                        <i class="bi bi-list-check text-success me-2"></i>
+                        Services (@_catalog.Services.Count)
+                    </h2>
+                    <div>
+                        <div class="btn-group" role="group">
+                            <button @onclick="ShowAllServices" class="btn @(_activeView == "all" ? "btn-primary" : "btn-outline-primary")">
+                                <i class="bi bi-grid-3x3-gap me-1"></i> All
+                            </button>
+                            <button @onclick="ShowCardView" class="btn @(_activeView == "cards" ? "btn-primary" : "btn-outline-primary")">
+                                <i class="bi bi-card-list me-1"></i> Cards
+                            </button>
+                            <button @onclick="ShowTableView" class="btn @(_activeView == "table" ? "btn-primary" : "btn-outline-primary")">
+                                <i class="bi bi-table me-1"></i> Table
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* Tags and Search Section *@
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" class="form-control" placeholder="Search services..."
+                           @bind="_searchTerm" @bind:event="oninput" @onkeyup="FilterServices" />
+                    @if (!string.IsNullOrEmpty(_searchTerm))
+                    {
+                        <button class="btn btn-outline-secondary" type="button" @onclick="ClearSearch">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    }
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex flex-wrap gap-1 justify-content-md-end mt-2 mt-md-0">
+                    @foreach (var tag in _allTags)
+                    {
+                        <button class="btn @(_selectedTags.Contains(tag) ? "btn-info" : "btn-outline-info") btn-sm"
+                                @onclick="() => ToggleTag(tag)">
+                            @tag
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* Card View *@
+        @if (_activeView == "cards" || _activeView == "all")
+        {
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+                @foreach (var service in _filteredServices)
+                {
+                    <div class="col">
+                        <div class="card h-100 shadow-sm border-0 @(service.AuthRequired ? "border-start border-warning border-5" : "border-start border-success border-5")">
+                            <div class="card-header bg-transparent border-bottom-0">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h5 class="card-title mb-0 text-primary">@service.Name</h5>
+                                    <div>
+                                        @if (service.AuthRequired)
+                                        {
+                                            <span class="badge bg-warning text-dark" title="Authentication Required">
+                                                <i class="bi bi-shield-lock-fill me-1"></i>
+                                                @service.AuthType
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success" title="No Authentication Required">
+                                                <i class="bi bi-unlock-fill me-1"></i> Public
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">@service.Description</p>
+
+                                <div class="d-flex flex-wrap gap-1 mb-3">
+                                    @foreach (var tag in service.Tags)
+                                    {
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-tag me-1"></i> @tag
+                                        </span>
+                                    }
+                                </div>
+
+                                <div class="text-muted small">
+                                    <div><strong>Swagger URL:</strong></div>
+                                    <div class="text-truncate">
+                                        <a href="@service.Url" target="_blank" class="text-decoration-none">
+                                            @service.Url <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent border-top-0">
+                                <div class="btn-group w-100">
+                                    <a href="@service.Url" target="_blank" class="btn btn-outline-primary">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i> Swagger
+                                    </a>
+                                    <a href="@service.HealthCheckUrl" target="_blank" class="btn btn-outline-success">
+                                        <i class="bi bi-heart-pulse me-1"></i> Health
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @* Table View *@
+        @if (_activeView == "table" || _activeView == "all")
+        {
+            <div class="row mb-4">
+                <div class="col">
+                    <div class="card shadow-sm">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Service Name</th>
+                                            <th>Description</th>
+                                            <th>Tags</th>
+                                            <th>Auth</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var service in _filteredServices)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <strong>@service.Name</strong>
+                                                </td>
+                                                <td>@service.Description</td>
+                                                <td>
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        @foreach (var tag in service.Tags)
+                                                        {
+                                                            <span class="badge bg-light text-dark border">@tag</span>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    @if (service.AuthRequired)
+                                                    {
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="bi bi-shield-lock-fill me-1"></i>
+                                                            @service.AuthType
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-unlock-fill me-1"></i> No
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <a href="@service.Url" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-file-earmark-text me-1"></i> Swagger
+                                                        </a>
+                                                        <a href="@service.HealthCheckUrl" target="_blank" class="btn btn-sm btn-outline-success">
+                                                            <i class="bi bi-heart-pulse me-1"></i> Health
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private ServiceCatalog? _catalog;
+    private string? _errorMessage;
+    private string _activeView = "cards";
+    private string _searchTerm = "";
+    private readonly HashSet<string> _selectedTags = new();
+    private readonly HashSet<string> _allTags = new();
+    private List<Service> _filteredServices = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _errorMessage = null;
+            var yamlContent = await HttpClient.GetStringAsync("sample.yaml");
+
+            _catalog = YamlService.DeserializeYaml<ServiceCatalog>(yamlContent);
+
+            if (_catalog == null)
+            {
+                _errorMessage = "Failed to parse the YAML file. Please check the format.";
+                return;
+            }
+
+            // Extract all unique tags
+            _allTags.Clear();
+            foreach (var service in _catalog.Services)
+            {
+                foreach (var tag in service.Tags)
+                {
+                    _allTags.Add(tag);
+                }
+            }
+
+            // Initial filtering
+            FilterServices();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error: {ex.Message}";
+            _catalog = null;
+        }
+    }
+
+    private void FilterServices()
+    {
+        if (_catalog == null) return;
+
+        _filteredServices = _catalog.Services.Where(service => {
+            // Filter by search term
+            bool matchesSearch = string.IsNullOrEmpty(_searchTerm) ||
+                                 service.Name.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                                 service.Description.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase);
+
+            // Filter by selected tags
+            bool matchesTags = _selectedTags.Count == 0 ||
+                               service.Tags.Any(tag => _selectedTags.Contains(tag));
+
+            return matchesSearch && matchesTags;
+        }).ToList();
+    }
+
+    private void ToggleTag(string tag)
+    {
+        if (_selectedTags.Contains(tag))
+        {
+            _selectedTags.Remove(tag);
+        }
+        else
+        {
+            _selectedTags.Add(tag);
+        }
+
+        FilterServices();
+    }
+
+    private void ClearSearch()
+    {
+        _searchTerm = "";
+        FilterServices();
+    }
+
+    private void ClearAllFilters()
+    {
+        _searchTerm = "";
+        _selectedTags.Clear();
+        FilterServices();
+    }
+
+    private void ShowCardView() => _activeView = "cards";
+    private void ShowTableView() => _activeView = "table";
+    private void ShowAllServices() => _activeView = "all";
+}
