@@ -1,0 +1,64 @@
+# .NET Core
+bin/
+obj/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+.vs/
+.vscode/
+*.swp
+*.swo
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio files
+*.nupkg
+*.pfx
+*.snk
+*.[Pp]ublish.xml
+*.azurePubxml
+project.lock.json
+project.fragment.lock.json
+
+# Rider
+.idea/
+
+# User-specific files
+*.rsuser
+*.sln.docstates
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Node.js (for Blazor WebAssembly)
+node_modules/
+wwwroot/dist/
+
+# Environment files
+*.env
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Local.json
+
+# Blazor specific
+_ReSharper*/
+*.ReSharper*
+_NCrunch_*
+*.ncrunch*
+ServiceDependencies/
